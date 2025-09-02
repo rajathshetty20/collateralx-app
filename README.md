@@ -1,12 +1,77 @@
-# React + Vite
+# CollateralX UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React interface for the CollateralX lending protocol, allowing users to deposit ETH as collateral and borrow stablecoins against it.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Deposit ETH as collateral
+- Borrow stablecoins (150% collateral ratio)
+- Multiple loans per collateral
+- Flexible loan repayment
+- Liquidation (120% threshold)
+- 10% annual interest rate
 
-## Expanding the ESLint configuration
+## Quick Start
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# Install dependencies
+npm install
+
+# Update contract addresses in src/config.js
+export const CONFIG = {
+  COLLATERALX_ADDRESS: "YOUR_DEPLOYED_ADDRESS",
+  TESTCOIN_ADDRESS: "YOUR_DEPLOYED_ADDRESS"
+};
+
+# Start development server
+npm run dev
+```
+
+## Prerequisites
+
+- Node.js
+- MetaMask
+- Local Hardhat network or other Ethereum network
+
+
+## Local Development
+
+1. Start local blockchain:
+```bash
+# In collateralx-protocol directory
+npx hardhat node
+npx hardhat run scripts/deploy.js --network localhost
+```
+
+2. Configure network in MetaMask:
+- RPC URL: `http://127.0.0.1:8545`
+- Chain ID: `31337`
+- Currency: `ETH`
+
+## Project Structure
+
+```
+src/
+├── abi/         # Contract ABIs
+├── config.js    # Network & contract config
+├── App.jsx      # Main UI component
+└── App.css      # Styling
+```
+
+## Available Scripts
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run lint`: Run ESLint
+
+## Security Notes
+
+- Maintain >150% collateral ratio
+- Positions below 120% can be liquidated
+- Interest accumulates over time
+- Test with small amounts first
+- Verify contract addresses
+
+## License
+
+MIT
