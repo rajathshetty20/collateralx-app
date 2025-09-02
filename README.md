@@ -2,6 +2,8 @@
 
 React interface for the CollateralX lending protocol, allowing users to deposit ETH as collateral and borrow stablecoins against it.
 
+BE: https://github.com/rajathshetty20/collateralx-protocol
+
 ## Features
 
 - Deposit ETH as collateral
