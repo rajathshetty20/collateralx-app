@@ -15,7 +15,6 @@ function App() {
   const [userLoans, setUserLoans] = useState([]);
   const [userTestCoinBalance, setUserTestCoinBalance] = useState('0');
   const [contractTestCoinBalance, setContractTestCoinBalance] = useState('0');
-  const [isLoading, setIsLoading] = useState(false);
 
   // UI State
   const [collateralAmount, setCollateralAmount] = useState('');
@@ -23,6 +22,8 @@ function App() {
   const [repayAmount, setRepayAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [liquidateAddress, setLiquidateAddress] = useState('');
+  const [toasts, setToasts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Connect wallet
   const connectWallet = async () => {
@@ -43,11 +44,13 @@ function App() {
         
         loadUserData();
       } else {
-        alert('Please install MetaMask!');
+        showToast('Please install MetaMask to use this app', 'error');
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
-      alert('Error connecting wallet');
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Failed to connect wallet';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -87,12 +90,14 @@ function App() {
       const tx = await collateralXContract.depositCollateral({ value: amount });
       await tx.wait();
       
-      alert('Collateral deposited successfully!');
+      showToast('Collateral deposited successfully!', 'success');
       setCollateralAmount('');
       loadUserData();
     } catch (error) {
       console.error('Error depositing collateral:', error);
-      alert('Error depositing collateral: ' + error.message);
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Failed to deposit collateral';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -108,12 +113,14 @@ function App() {
       const tx = await collateralXContract.borrowStableCoin(amount);
       await tx.wait();
       
-      alert('Stablecoin borrowed successfully!');
+      showToast('Stablecoin borrowed successfully!', 'success');
       setBorrowAmount('');
       loadUserData();
     } catch (error) {
       console.error('Error borrowing stablecoin:', error);
-      alert('Error borrowing stablecoin: ' + error.message);
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Transaction failed';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -135,12 +142,14 @@ function App() {
       const repayTx = await collateralXContract.repayStableCoin(amount, [0]);
       await repayTx.wait();
       
-      alert('Loan repaid successfully!');
+      showToast('Loan repaid successfully!', 'success');
       setRepayAmount('');
       loadUserData();
     } catch (error) {
       console.error('Error repaying loan:', error);
-      alert('Error repaying loan: ' + error.message);
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Failed to repay loan';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -156,12 +165,14 @@ function App() {
       const tx = await collateralXContract.withdrawCollateral(amount);
       await tx.wait();
       
-      alert('Collateral withdrawn successfully!');
+      showToast('Collateral withdrawn successfully!', 'success');
       setWithdrawAmount('');
       loadUserData();
     } catch (error) {
       console.error('Error withdrawing collateral:', error);
-      alert('Error withdrawing collateral: ' + error.message);
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Failed to withdraw collateral';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -176,12 +187,14 @@ function App() {
       const tx = await collateralXContract.liquidate(liquidateAddress);
       await tx.wait();
       
-      alert('Position liquidated successfully!');
+      showToast('Position liquidated successfully!', 'success');
       setLiquidateAddress('');
       loadUserData();
     } catch (error) {
       console.error('Error liquidating position:', error);
-      alert('Error liquidating position: ' + error.message);
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Failed to liquidate position';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -196,14 +209,36 @@ function App() {
       const tx = await testCoinContract.faucet(account, ethers.parseEther("1000"));
       await tx.wait();
       
-      alert('Test tokens received!');
+      showToast('Test tokens received successfully!', 'success');
       loadUserData();
     } catch (error) {
       console.error('Error getting test tokens:', error);
-      alert('Error getting test tokens: ' + error.message);
+      const revertReason = error.message.match(/"([^"]*)"/) || [];
+      const errorMessage = revertReason[1] || 'Failed to get test tokens';
+      showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Toast notification helper
+  const showToast = (message, type = 'info') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    
+    setTimeout(() => {
+      // Removal animation for a toast after 5 seconds
+      setToasts(prev => 
+        prev.map(toast => 
+          toast.id === id ? { ...toast, removing: true } : toast
+        )
+      );
+      
+      // Actually remove the toast after animation completes
+      setTimeout(() => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+      }, 300);
+    }, 5000);
   };
 
   useEffect(() => {
@@ -228,6 +263,28 @@ function App() {
 
   return (
     <div className="app">
+      <div className="toast-container">
+        {toasts.map(toast => (
+          <div key={toast.id} className={`toast ${toast.type} ${toast.removing ? 'removing' : ''}`}>
+            <div className="toast-message">{toast.message}</div>
+            <button
+              className="toast-close"
+              onClick={() => {
+                setToasts(prev => 
+                  prev.map(t => 
+                    t.id === toast.id ? { ...t, removing: true } : t
+                  )
+                );
+                setTimeout(() => {
+                  setToasts(prev => prev.filter(t => t.id !== toast.id));
+                }, 300);
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
       <header className="app-header">
         <h1>CollateralX Protocol</h1>
         <div className="wallet-info">
@@ -241,112 +298,138 @@ function App() {
       <main className="app-main">
         <div className="dashboard">
           <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Your Collateral</h3>
-              <p>{parseFloat(userCollateral).toFixed(4)} ETH</p>
-            </div>
-            <div className="stat-card">
-              <h3>TestCoin Balance</h3>
-              <p>{parseFloat(userTestCoinBalance).toFixed(2)} TC</p>
-            </div>
-            <div className="stat-card">
-              <h3>Active Loans</h3>
-              <p>{userLoans.length}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Contract Balance</h3>
-              <p>{parseFloat(contractTestCoinBalance).toFixed(2)} TC</p>
-            </div>
+            <>
+              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                <h3>Your Collateral</h3>
+                <p>{parseFloat(userCollateral).toFixed(4)} ETH</p>
+              </div>
+              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                <h3>Your Balance</h3>
+                <p>{parseFloat(userTestCoinBalance).toFixed(2)} TC</p>
+              </div>
+              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                <h3>Active Loans</h3>
+                <p>{userLoans.length}</p>
+              </div>
+              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                <h3>Contract Balance</h3>
+                <p>{parseFloat(contractTestCoinBalance).toFixed(2)} TC</p>
+              </div>
+            </>
           </div>
 
           <div className="actions-grid">
             {/* Collateral Management */}
-            <div className="action-card">
+            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
               <h3>Collateral Management</h3>
               <div className="input-group">
-                <input
-                  type="number"
-                  placeholder="Amount in ETH"
-                  value={collateralAmount}
-                  onChange={(e) => setCollateralAmount(e.target.value)}
-                  step="0.01"
-                />
-                <button onClick={depositCollateral} disabled={isLoading || !collateralAmount}>
-                  {isLoading ? 'Processing...' : 'Deposit'}
-                </button>
+                <label>Deposit Collateral</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={collateralAmount}
+                    onChange={(e) => setCollateralAmount(e.target.value)}
+                    step="0.01"
+                  />
+                  {!isLoading && <span className="unit-label">ETH</span>}
+                  <button onClick={depositCollateral} disabled={isLoading || !collateralAmount}>
+                    {isLoading ? 'Processing...' : 'Deposit'}
+                  </button>
+                </div>
+                <div className="helper-text">Deposit ETH as collateral to borrow stablecoins</div>
               </div>
               <div className="input-group">
-                <input
-                  type="number"
-                  placeholder="Amount in ETH"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  step="0.01"
-                />
-                <button onClick={withdrawCollateral} disabled={isLoading || !withdrawAmount}>
-                  {isLoading ? 'Processing...' : 'Withdraw'}
-                </button>
+                <label>Withdraw Collateral</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    step="0.01"
+                  />
+                  {!isLoading && <span className="unit-label">ETH</span>}
+                  <button onClick={withdrawCollateral} disabled={isLoading || !withdrawAmount}>
+                    {isLoading ? 'Processing...' : 'Withdraw'}
+                  </button>
+                </div>
+                <div className="helper-text">Withdraw your deposited ETH</div>
               </div>
             </div>
 
             {/* Borrowing */}
-            <div className="action-card">
+            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
               <h3>Borrow Stablecoin</h3>
               <div className="input-group">
-                <input
-                  type="number"
-                  placeholder="Amount in TC"
-                  value={borrowAmount}
-                  onChange={(e) => setBorrowAmount(e.target.value)}
-                  step="1"
-                />
-                <button onClick={borrowStableCoin} disabled={isLoading || !borrowAmount}>
-                  {isLoading ? 'Processing...' : 'Borrow'}
-                </button>
+                <label>Borrow Stablecoin</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={borrowAmount}
+                    onChange={(e) => setBorrowAmount(e.target.value)}
+                    step="1"
+                  />
+                  {!isLoading && <span className="unit-label">TC</span>}
+                  <button onClick={borrowStableCoin} disabled={isLoading || !borrowAmount}>
+                    {isLoading ? 'Processing...' : 'Borrow'}
+                  </button>
+                </div>
+                <div className="helper-text">Borrow stablecoins against your ETH collateral</div>
               </div>
             </div>
 
             {/* Repayment */}
-            <div className="action-card">
+            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
               <h3>Repay Loan</h3>
               <div className="input-group">
-                <input
-                  type="number"
-                  placeholder="Amount in TC"
-                  value={repayAmount}
-                  onChange={(e) => setRepayAmount(e.target.value)}
-                  step="1"
-                />
-                <button onClick={repayLoan} disabled={isLoading || !repayAmount}>
-                  {isLoading ? 'Processing...' : 'Repay'}
-                </button>
+                <label>Authorize Payment</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={repayAmount}
+                    onChange={(e) => setRepayAmount(e.target.value)}
+                    step="1"
+                  />
+                  {!isLoading && <span className="unit-label">TC</span>}
+                  <button onClick={repayLoan} disabled={isLoading || !repayAmount}>
+                    {isLoading ? 'Processing...' : 'Repay'}
+                  </button>
+                </div>
+                <div className="helper-text">Repay your borrowed stablecoins to unlock collateral</div>
               </div>
             </div>
 
             {/* Liquidation */}
-            <div className="action-card">
+            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
               <h3>Liquidate Position</h3>
               <div className="input-group">
-                <input
-                  type="text"
-                  placeholder="Address to liquidate"
-                  value={liquidateAddress}
-                  onChange={(e) => setLiquidateAddress(e.target.value)}
-                />
-                <button onClick={liquidatePosition} disabled={isLoading || !liquidateAddress}>
-                  {isLoading ? 'Processing...' : 'Liquidate'}
-                </button>
+                <label>Liquidate Position</label>
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Enter wallet address"
+                    value={liquidateAddress}
+                    onChange={(e) => setLiquidateAddress(e.target.value)}
+                  />
+                  <button onClick={liquidatePosition} disabled={isLoading || !liquidateAddress}>
+                    {isLoading ? 'Processing...' : 'Liquidate'}
+                  </button>
+                </div>
+                <div className="helper-text">Liquidate undercollateralized positions to collect ETH</div>
               </div>
             </div>
           </div>
 
           {/* Loan Status */}
-          {userLoans.length > 0 && (
+          {(userLoans.length > 0 || isLoading) && (
             <div className="loans-section">
               <h3>Your Loans</h3>
               <div className="loans-grid">
                 {userLoans.map((loan, index) => (
-                  <div key={index} className="loan-card">
+                  <div key={index} className={`loan-card ${isLoading ? 'skeleton' : ''}`}>
                     <h4>Loan #{index + 1}</h4>
                     <p><strong>Principal:</strong> {ethers.formatEther(loan.principal)} TC</p>
                     <p><strong>Interest:</strong> {ethers.formatEther(loan.interest)} TC</p>
