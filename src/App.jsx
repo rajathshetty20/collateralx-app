@@ -250,20 +250,6 @@ function App() {
     }
   }, [account]);
 
-  if (!account) {
-    return (
-      <div className="app">
-        <header className="app-header">
-          <h1>CollateralX Protocol</h1>
-          <p>DeFi Lending and Borrowing Platform</p>
-          <button onClick={connectWallet} className="connect-btn">
-            Connect Wallet
-          </button>
-        </header>
-      </div>
-    );
-  }
-
   return (
     <div className="app">
       <div className="toast-container">
@@ -288,176 +274,189 @@ function App() {
           </div>
         ))}
       </div>
-      <header className="app-header">
-        <h1>CollateralX Protocol</h1>
-        <div className="wallet-info">
-          <span>Connected: {account.slice(0, 6)}...{account.slice(-4)}</span>
-          <button onClick={getTestTokens} className="faucet-btn" disabled={isLoading}>
-            Get Test Tokens
+
+      {!account ? (
+        <header className="app-header">
+          <h1>CollateralX Protocol</h1>
+          <p>DeFi Lending and Borrowing Platform</p>
+          <button onClick={connectWallet} className="connect-btn">
+            Connect Wallet
           </button>
-        </div>
-      </header>
-
-      <main className="app-main">
-        <div className="dashboard">
-          <div className="stats-grid">
-            <>
-              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
-                <h3>Your Collateral</h3>
-                <p>{parseFloat(userCollateral).toFixed(4)} ETH</p>
-              </div>
-              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
-                <h3>Your Balance</h3>
-                <p>{parseFloat(userTestCoinBalance).toFixed(2)} TC</p>
-              </div>
-              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
-                <h3>Active Loans</h3>
-                <p>{userLoans.length}</p>
-              </div>
-              <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
-                <h3>Contract Balance</h3>
-                <p>{parseFloat(contractTestCoinBalance).toFixed(2)} TC</p>
-              </div>
-            </>
-          </div>
-
-          <div className="actions-grid">
-            {/* Collateral Management */}
-            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
-              <h3>Collateral Management</h3>
-              <div className="input-group">
-                <label>Deposit Collateral</label>
-                <div className="input-wrapper">
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={collateralAmount}
-                    onChange={(e) => setCollateralAmount(e.target.value)}
-                    step="0.01"
-                  />
-                  {!isLoading && <span className="unit-label">ETH</span>}
-                  <button onClick={depositCollateral} disabled={isLoading || !collateralAmount}>
-                    {isLoading ? 'Processing...' : 'Deposit'}
-                  </button>
-                </div>
-                <div className="helper-text">Deposit ETH as collateral to borrow stablecoins</div>
-              </div>
-              <div className="input-group">
-                <label>Withdraw Collateral</label>
-                <div className="input-wrapper">
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    step="0.01"
-                  />
-                  {!isLoading && <span className="unit-label">ETH</span>}
-                  <button onClick={withdrawCollateral} disabled={isLoading || !withdrawAmount}>
-                    {isLoading ? 'Processing...' : 'Withdraw'}
-                  </button>
-                </div>
-                <div className="helper-text">Withdraw your deposited ETH</div>
-              </div>
+        </header>
+      ) : (
+        <>
+          <header className="app-header">
+            <h1>CollateralX Protocol</h1>
+            <div className="wallet-info">
+              <span>Connected: {account.slice(0, 6)}...{account.slice(-4)}</span>
+              <button onClick={getTestTokens} className="faucet-btn" disabled={isLoading}>
+                Get Test Tokens
+              </button>
             </div>
+          </header>
 
-            {/* Borrowing */}
-            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
-              <h3>Borrow Stablecoin</h3>
-              <div className="input-group">
-                <label>Borrow Stablecoin</label>
-                <div className="input-wrapper">
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={borrowAmount}
-                    onChange={(e) => setBorrowAmount(e.target.value)}
-                    step="1"
-                  />
-                  {!isLoading && <span className="unit-label">TC</span>}
-                  <button onClick={borrowStableCoin} disabled={isLoading || !borrowAmount}>
-                    {isLoading ? 'Processing...' : 'Borrow'}
-                  </button>
-                </div>
-                <div className="helper-text">Borrow stablecoins against your ETH collateral</div>
-              </div>
-            </div>
-
-            {/* Repayment */}
-            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
-              <h3>Repay Loan</h3>
-              <div className="input-group">
-                <label>Loan Number</label>
-                <div className="input-wrapper">
-                  <input
-                    type="number"
-                    placeholder="Enter loan #"
-                    value={repayLoanNumber}
-                    onChange={(e) => setRepayLoanNumber(e.target.value)}
-                    min="1"
-                    max={userLoans.length}
-                    step="1"
-                  />
-                </div>
-                <div className="helper-text">Enter the loan number you want to repay (1-{userLoans.length})</div>
-              </div>
-              <div className="input-group">
-                <label>Authorize Payment</label>
-                <div className="input-wrapper">
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={repayAmount}
-                    onChange={(e) => setRepayAmount(e.target.value)}
-                    step="1"
-                  />
-                  {!isLoading && <span className="unit-label">TC</span>}
-                  <button onClick={repayLoan} disabled={isLoading || !repayAmount || !repayLoanNumber}>
-                    {isLoading ? 'Processing...' : 'Repay'}
-                  </button>
-                </div>
-                <div className="helper-text">Authorize enough stablecoins to repay the specified loan</div>
-              </div>
-            </div>
-
-            {/* Liquidation */}
-            <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
-              <h3>Liquidate Position</h3>
-              <div className="input-group">
-                <label>Liquidate Position</label>
-                <div className="input-wrapper">
-                  <input
-                    type="text"
-                    placeholder="Enter wallet address"
-                    value={liquidateAddress}
-                    onChange={(e) => setLiquidateAddress(e.target.value)}
-                  />
-                  <button onClick={liquidatePosition} disabled={isLoading || !liquidateAddress}>
-                    {isLoading ? 'Processing...' : 'Liquidate'}
-                  </button>
-                </div>
-                <div className="helper-text">Liquidate undercollateralized positions to collect ETH</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Loan Status */}
-          {(userLoans.length > 0 || isLoading) && (
-            <div className="loans-section">
-              <h3>Your Loans</h3>
-              <div className="loans-grid">
-                {userLoans.map((loan, index) => (
-                  <div key={index} className={`loan-card ${isLoading ? 'skeleton' : ''}`}>
-                    <h4>Loan #{index + 1}</h4>
-                    <p><strong>Principal:</strong> {ethers.formatEther(loan.principal)} TC</p>
-                    <p><strong>Interest:</strong> {ethers.formatEther(loan.interest)} TC</p>
+          <main className="app-main">
+            <div className="dashboard">
+              <div className="stats-grid">
+                <>
+                  <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                    <h3>Your Collateral</h3>
+                    <p>{parseFloat(userCollateral).toFixed(4)} ETH</p>
                   </div>
-                ))}
+                  <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                    <h3>Your Balance</h3>
+                    <p>{parseFloat(userTestCoinBalance).toFixed(2)} TC</p>
+                  </div>
+                  <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                    <h3>Active Loans</h3>
+                    <p>{userLoans.length}</p>
+                  </div>
+                  <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
+                    <h3>Contract Balance</h3>
+                    <p>{parseFloat(contractTestCoinBalance).toFixed(2)} TC</p>
+                  </div>
+                </>
               </div>
+
+              <div className="actions-grid">
+                {/* Collateral Management */}
+                <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
+                  <h3>Collateral Management</h3>
+                  <div className="input-group">
+                    <label>Deposit Collateral</label>
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        placeholder="Enter amount"
+                        value={collateralAmount}
+                        onChange={(e) => setCollateralAmount(e.target.value)}
+                        step="0.01"
+                      />
+                      {!isLoading && <span className="unit-label">ETH</span>}
+                      <button onClick={depositCollateral} disabled={isLoading || !collateralAmount}>
+                        {isLoading ? 'Processing...' : 'Deposit'}
+                      </button>
+                    </div>
+                    <div className="helper-text">Deposit ETH as collateral to borrow stablecoins</div>
+                  </div>
+                  <div className="input-group">
+                    <label>Withdraw Collateral</label>
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        placeholder="Enter amount"
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        step="0.01"
+                      />
+                      {!isLoading && <span className="unit-label">ETH</span>}
+                      <button onClick={withdrawCollateral} disabled={isLoading || !withdrawAmount}>
+                        {isLoading ? 'Processing...' : 'Withdraw'}
+                      </button>
+                    </div>
+                    <div className="helper-text">Withdraw your deposited ETH</div>
+                  </div>
+                </div>
+
+                {/* Borrowing */}
+                <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
+                  <h3>Borrow Stablecoin</h3>
+                  <div className="input-group">
+                    <label>Borrow Stablecoin</label>
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        placeholder="Enter amount"
+                        value={borrowAmount}
+                        onChange={(e) => setBorrowAmount(e.target.value)}
+                        step="1"
+                      />
+                      {!isLoading && <span className="unit-label">TC</span>}
+                      <button onClick={borrowStableCoin} disabled={isLoading || !borrowAmount}>
+                        {isLoading ? 'Processing...' : 'Borrow'}
+                      </button>
+                    </div>
+                    <div className="helper-text">Borrow stablecoins against your ETH collateral</div>
+                  </div>
+                </div>
+
+                {/* Repayment */}
+                <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
+                  <h3>Repay Loan</h3>
+                  <div className="input-group">
+                    <label>Loan Number</label>
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        placeholder="Enter loan #"
+                        value={repayLoanNumber}
+                        onChange={(e) => setRepayLoanNumber(e.target.value)}
+                        min="1"
+                        max={userLoans.length}
+                        step="1"
+                      />
+                    </div>
+                    <div className="helper-text">Enter the loan number you want to repay (1-{userLoans.length})</div>
+                  </div>
+                  <div className="input-group">
+                    <label>Authorize Payment</label>
+                    <div className="input-wrapper">
+                      <input
+                        type="number"
+                        placeholder="Enter amount"
+                        value={repayAmount}
+                        onChange={(e) => setRepayAmount(e.target.value)}
+                        step="1"
+                      />
+                      {!isLoading && <span className="unit-label">TC</span>}
+                      <button onClick={repayLoan} disabled={isLoading || !repayAmount || !repayLoanNumber}>
+                        {isLoading ? 'Processing...' : 'Repay'}
+                      </button>
+                    </div>
+                    <div className="helper-text">Authorize enough stablecoins to repay the specified loan</div>
+                  </div>
+                </div>
+
+                {/* Liquidation */}
+                <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
+                  <h3>Liquidate Position</h3>
+                  <div className="input-group">
+                    <label>Liquidate Position</label>
+                    <div className="input-wrapper">
+                      <input
+                        type="text"
+                        placeholder="Enter wallet address"
+                        value={liquidateAddress}
+                        onChange={(e) => setLiquidateAddress(e.target.value)}
+                      />
+                      <button onClick={liquidatePosition} disabled={isLoading || !liquidateAddress}>
+                        {isLoading ? 'Processing...' : 'Liquidate'}
+                      </button>
+                    </div>
+                    <div className="helper-text">Liquidate undercollateralized positions to collect ETH</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Loan Status */}
+              {(userLoans.length > 0 || isLoading) && (
+                <div className="loans-section">
+                  <h3>Your Loans</h3>
+                  <div className="loans-grid">
+                    {userLoans.map((loan, index) => (
+                      <div key={index} className={`loan-card ${isLoading ? 'skeleton' : ''}`}>
+                        <h4>Loan #{index + 1}</h4>
+                        <p><strong>Principal:</strong> {ethers.formatEther(loan.principal)} TC</p>
+                        <p><strong>Interest:</strong> {ethers.formatEther(loan.interest)} TC</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </main>
+          </main>
+        </>
+      )}
     </div>
   );
 }
