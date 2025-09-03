@@ -276,18 +276,52 @@ function App() {
       </div>
 
       {!account ? (
-        <header className="app-header">
-          <h1>CollateralX Protocol</h1>
-          <p>DeFi Lending and Borrowing Platform</p>
-          <button onClick={connectWallet} className="connect-btn">
-            Connect Wallet
-          </button>
-        </header>
+        <>
+          <header className="app-header">
+            <h1>CollateralX</h1>
+          </header>
+          <main className="landing-main">
+            <div className="landing-content">
+              <div className="hero-section">
+                <h2>Unlock the Value of Your ETH</h2>
+                <p>Get instant stablecoin loans using your ETH as collateral</p>
+                <button onClick={connectWallet} className="connect-btn">
+                  Connect Wallet to Start
+                </button>
+              </div>
+
+              <div className="how-it-works">
+                <div className="steps-grid">
+                  <div className="step-card">
+                    <div className="step-number">1</div>
+                    <h4>Deposit ETH</h4>
+                    <p>Connect your wallet and deposit ETH as collateral</p>
+                  </div>
+                  <div className="step-card">
+                    <div className="step-number">2</div>
+                    <h4>Borrow Stablecoins</h4>
+                    <p>Get instant stablecoins based on your collateral value</p>
+                  </div>
+                  <div className="step-card">
+                    <div className="step-number">3</div>
+                    <h4>Repay Anytime</h4>
+                    <p>Repay your loan anytime with no fixed schedule</p>
+                  </div>
+                </div>
+              </div>
+
+
+            </div>
+          </main>
+        </>
       ) : (
         <>
           <header className="app-header">
-            <h1>CollateralX Protocol</h1>
+            <h1>CollateralX</h1>
             <div className="wallet-info">
+              <button onClick={() => setAccount(null)} className="back-btn">
+                ← Back
+              </button>
               <span>Connected: {account.slice(0, 6)}...{account.slice(-4)}</span>
               <button onClick={getTestTokens} className="faucet-btn" disabled={isLoading}>
                 Get Test Tokens
@@ -330,7 +364,6 @@ function App() {
                         placeholder="Enter amount"
                         value={collateralAmount}
                         onChange={(e) => setCollateralAmount(e.target.value)}
-                        step="0.01"
                       />
                       {!isLoading && <span className="unit-label">ETH</span>}
                       <button onClick={depositCollateral} disabled={isLoading || !collateralAmount}>
@@ -347,7 +380,6 @@ function App() {
                         placeholder="Enter amount"
                         value={withdrawAmount}
                         onChange={(e) => setWithdrawAmount(e.target.value)}
-                        step="0.01"
                       />
                       {!isLoading && <span className="unit-label">ETH</span>}
                       <button onClick={withdrawCollateral} disabled={isLoading || !withdrawAmount}>
@@ -369,7 +401,6 @@ function App() {
                         placeholder="Enter amount"
                         value={borrowAmount}
                         onChange={(e) => setBorrowAmount(e.target.value)}
-                        step="1"
                       />
                       {!isLoading && <span className="unit-label">TC</span>}
                       <button onClick={borrowStableCoin} disabled={isLoading || !borrowAmount}>
@@ -406,11 +437,10 @@ function App() {
                         placeholder="Enter amount"
                         value={repayAmount}
                         onChange={(e) => setRepayAmount(e.target.value)}
-                        step="1"
                       />
                       {!isLoading && <span className="unit-label">TC</span>}
                       <button onClick={repayLoan} disabled={isLoading || !repayAmount || !repayLoanNumber}>
-                        {isLoading ? 'Processing...' : 'Repay'}
+                        {isLoading ? 'Processing...' : 'Authorize'}
                       </button>
                     </div>
                     <div className="helper-text">Authorize enough stablecoins to repay the specified loan</div>
