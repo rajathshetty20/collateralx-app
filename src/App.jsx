@@ -20,6 +20,7 @@ function App() {
   const [collateralAmount, setCollateralAmount] = useState('');
   const [borrowAmount, setBorrowAmount] = useState('');
   const [repayAmount, setRepayAmount] = useState('');
+  const [repayLoanNumber, setRepayLoanNumber] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [liquidateAddress, setLiquidateAddress] = useState('');
   const [toasts, setToasts] = useState([]);
@@ -128,7 +129,7 @@ function App() {
 
   // Repay loan
   const repayLoan = async () => {
-    if (!collateralXContract || !testCoinContract || !repayAmount) return;
+    if (!collateralXContract || !testCoinContract || !repayAmount || !repayLoanNumber) return;
     
     try {
       setIsLoading(true);
@@ -138,12 +139,14 @@ function App() {
       const approveTx = await testCoinContract.approve(CONFIG.COLLATERALX_ADDRESS, amount);
       await approveTx.wait();
       
-      // Then repay the loan (repaying the first loan for simplicity)
-      const repayTx = await collateralXContract.repayStableCoin(amount, [0]);
+      // Then repay the specified loan
+      const loanIndex = parseInt(repayLoanNumber) - 1;
+      const repayTx = await collateralXContract.repayStableCoin(amount, [loanIndex]);
       await repayTx.wait();
       
       showToast('Loan repaid successfully!', 'success');
       setRepayAmount('');
+      setRepayLoanNumber('');
       loadUserData();
     } catch (error) {
       console.error('Error repaying loan:', error);
@@ -384,6 +387,21 @@ function App() {
             <div className={`action-card ${isLoading ? 'skeleton' : ''}`}>
               <h3>Repay Loan</h3>
               <div className="input-group">
+                <label>Loan Number</label>
+                <div className="input-wrapper">
+                  <input
+                    type="number"
+                    placeholder="Enter loan #"
+                    value={repayLoanNumber}
+                    onChange={(e) => setRepayLoanNumber(e.target.value)}
+                    min="1"
+                    max={userLoans.length}
+                    step="1"
+                  />
+                </div>
+                <div className="helper-text">Enter the loan number you want to repay (1-{userLoans.length})</div>
+              </div>
+              <div className="input-group">
                 <label>Authorize Payment</label>
                 <div className="input-wrapper">
                   <input
@@ -394,11 +412,11 @@ function App() {
                     step="1"
                   />
                   {!isLoading && <span className="unit-label">TC</span>}
-                  <button onClick={repayLoan} disabled={isLoading || !repayAmount}>
+                  <button onClick={repayLoan} disabled={isLoading || !repayAmount || !repayLoanNumber}>
                     {isLoading ? 'Processing...' : 'Repay'}
                   </button>
                 </div>
-                <div className="helper-text">Repay your borrowed stablecoins to unlock collateral</div>
+                <div className="helper-text">Authorize enough stablecoins to repay the specified loan</div>
               </div>
             </div>
 
