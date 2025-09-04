@@ -564,6 +564,28 @@ body {
   overflow: hidden;
 }
 
+.loan-card.paid-loan {
+  background: #fafafa;
+  border-color: #e5e7eb;
+}
+
+.loan-card.active-loan {
+  border-left: 4px solid #667eea;
+}
+
+.loan-status-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  margin-left: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #dcfce7;
+}
+
 .loan-card::before {
   content: '';
   position: absolute;

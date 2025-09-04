@@ -224,6 +224,23 @@ function App() {
     }
   };
 
+  // Format loan age 
+  const getLoanAge = (timestamp) => {
+    const now = Math.floor(Date.now() / 1000);
+    const seconds = now - Number(timestamp);
+    
+    if (seconds < 60) return 'Just now';
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
   // Toast notification helper
   const showToast = (message, type = 'info') => {
     const id = Date.now();
@@ -343,7 +360,7 @@ function App() {
                   </div>
                   <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
                     <h3>Active Loans</h3>
-                    <p>{userLoans.length}</p>
+                    <p>{userLoans.filter(loan => Number(loan.principal) > 0).length}</p>
                   </div>
                   <div className={`stat-card ${isLoading ? 'skeleton' : ''}`}>
                     <h3>Contract Balance</h3>
@@ -473,13 +490,27 @@ function App() {
                 <div className="loans-section">
                   <h3>Your Loans</h3>
                   <div className="loans-grid">
-                    {userLoans.map((loan, index) => (
-                      <div key={index} className={`loan-card ${isLoading ? 'skeleton' : ''}`}>
-                        <h4>Loan #{index + 1}</h4>
-                        <p><strong>Principal:</strong> {ethers.formatEther(loan.principal)} TC</p>
-                        <p><strong>Interest:</strong> {ethers.formatEther(loan.interest)} TC</p>
-                      </div>
-                    ))}
+                    {userLoans.map((loan, index) => {
+                      const isPaid = Number(loan.principal) === 0;
+                      return (
+                        <div 
+                          key={index} 
+                          className={`loan-card ${isLoading ? 'skeleton' : ''} ${isPaid ? 'paid-loan' : 'active-loan'}`}
+                        >
+                          <h4>
+                            Loan #{index + 1}
+                            {isPaid && <span className="loan-status-badge">PAID</span>}
+                          </h4>
+                          {!isPaid && (
+                            <>
+                              <p><strong>Principal:</strong> {ethers.formatEther(loan.principal)} TC</p>
+                              <p><strong>Interest:</strong> {ethers.formatEther(loan.interest)} TC</p>
+                              <p><strong>Created:</strong> {getLoanAge(loan.timestamp)}</p>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
