@@ -12,43 +12,24 @@ BE: https://github.com/rajathshetty20/collateralx-protocol
 - Flexible loan repayment
 - Liquidation (120% threshold)
 - 10% annual interest rate
+- Real-time ETH/USD price feeds via Chainlink
 
 ## Quick Start
 
+1. Install dependencies:
 ```bash
-# Install dependencies
 npm install
+```
 
-# Update contract addresses in src/config.js
-export const CONFIG = {
-  COLLATERALX_ADDRESS: "YOUR_DEPLOYED_ADDRESS",
-  TESTCOIN_ADDRESS: "YOUR_DEPLOYED_ADDRESS"
-};
+2. Connect MetaMask to Sepolia network
 
-# Start development server
+3. Start the app:
+```bash
 npm run dev
 ```
 
-## Prerequisites
-
-- Node.js
-- MetaMask
-- Local Hardhat network or other Ethereum network
-
-
 ## Local Development
-
-1. Start local blockchain:
-```bash
-# In collateralx-protocol directory
-npx hardhat node
-npx hardhat run scripts/deploy.js --network localhost
-```
-
-2. Configure network in MetaMask:
-- RPC URL: `http://127.0.0.1:8545`
-- Chain ID: `31337`
-- Currency: `ETH`
+For local development, refer to the [CollateralX Protocol Repository](https://github.com/rajathshetty20/collateralx-protocol) for instructions on deploying contracts locally.
 
 ## Project Structure
 
@@ -60,17 +41,12 @@ src/
 └── App.css      # Styling
 ```
 
-## Available Scripts
-
-- `npm run dev`: Start development server
-- `npm run build`: Build for production
-- `npm run lint`: Run ESLint
-
 ## Security Notes
 
 - Maintain >150% collateral ratio
 - Positions below 120% can be liquidated
 - Interest accumulates over time
+- Uses Chainlink's trusted price feeds for accurate ETH valuation
 - Test with small amounts first
 - Verify contract addresses
 

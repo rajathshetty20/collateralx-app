@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import CollateralXABI from './abi/CollateralX.json';
 import TestCoinABI from './abi/TestCoin.json';
-import { CONFIG } from './config';
+import { networkConfigs } from './config';
 import './App.css';
+
+let networkConfig = null;
 
 function App() {
   const [account, setAccount] = useState(null);
@@ -26,24 +28,38 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    loadUserData();
+  }, [account, collateralXContract, testCoinContract]);
+
   // Connect wallet
   const connectWallet = async () => {
     try {
       if (typeof window.ethereum !== 'undefined') {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
         const provider = new ethers.BrowserProvider(window.ethereum);
+        
+        const network = await provider.getNetwork();
+        networkConfig = networkConfigs.find(net => net.chainId === network.chainId);
+        if (!networkConfig) {
+          showToast('Please switch to Sepolia to use this app', 'error');
+          return;
+        }
+        
+        await provider.send('eth_requestAccounts', []);
         const signer = await provider.getSigner();
         const account = await signer.getAddress();
         
+        const collateralX = new ethers.Contract(networkConfig.addresses.COLLATERALX_ADDRESS, CollateralXABI.abi, signer);
+        const testCoin = new ethers.Contract(networkConfig.addresses.TESTCOIN_ADDRESS, TestCoinABI.abi, signer);
+
         setAccount(account);
-        
-        const collateralX = new ethers.Contract(CONFIG.COLLATERALX_ADDRESS, CollateralXABI.abi, signer);
-        const testCoin = new ethers.Contract(CONFIG.TESTCOIN_ADDRESS, TestCoinABI.abi, signer);
-        
         setCollateralXContract(collateralX);
         setTestCoinContract(testCoin);
         
-        loadUserData();
+        window.ethereum.on('accountsChanged', handleAccountsChanged);
+        window.ethereum.on('chainChanged', handleChainChanged);
+        window.ethereum.on('disconnect', handleDisconnect);
+
       } else {
         showToast('Please install MetaMask to use this app', 'error');
       }
@@ -52,6 +68,48 @@ function App() {
       const revertReason = error.message.match(/"([^"]*)"/) || [];
       const errorMessage = revertReason[1] || 'Failed to connect wallet';
       showToast(errorMessage, 'error');
+    }
+  };
+
+  const handleAccountsChanged = async (accounts) => {
+    try {
+
+      if(accounts.length === 0) throw new Error('No accounts found');
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const newAccount = await signer.getAddress();
+
+      if(newAccount === account) return;
+
+      const collateralX = new ethers.Contract(networkConfig.addresses.COLLATERALX_ADDRESS, CollateralXABI.abi, signer);
+      const testCoin = new ethers.Contract(networkConfig.addresses.TESTCOIN_ADDRESS, TestCoinABI.abi, signer);
+        
+      setAccount(newAccount);
+      setCollateralXContract(collateralX);
+      setTestCoinContract(testCoin);
+      
+    } catch (error) {
+      console.error('Error handling account change:', error);
+      handleDisconnect();
+    }
+  };
+
+  const handleChainChanged = () => {
+    // Reload the page on chain change as recommended by MetaMask
+    window.location.reload();
+  };
+
+  const handleDisconnect = () => {
+    networkConfig = null;
+    setAccount(null);
+    setCollateralXContract(null);
+    setTestCoinContract(null);
+    
+    if (window.ethereum) {
+      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
+      window.ethereum.removeListener('disconnect', handleDisconnect);
     }
   };
 
@@ -71,7 +129,7 @@ function App() {
       const testCoinBalance = await testCoinContract.balanceOf(account);
       setUserTestCoinBalance(ethers.formatEther(testCoinBalance));
       
-      const contractBalance = await testCoinContract.balanceOf(CONFIG.COLLATERALX_ADDRESS);
+      const contractBalance = await testCoinContract.balanceOf(networkConfig.addresses.COLLATERALX_ADDRESS);
       setContractTestCoinBalance(ethers.formatEther(contractBalance));
       
     } catch (error) {
@@ -136,7 +194,7 @@ function App() {
       
       // First approve the contract to spend tokens
       const amount = ethers.parseEther(repayAmount);
-      const approveTx = await testCoinContract.approve(CONFIG.COLLATERALX_ADDRESS, amount);
+      const approveTx = await testCoinContract.approve(networkConfig.addresses.COLLATERALX_ADDRESS, amount);
       await approveTx.wait();
       
       // Then repay the specified loan
@@ -261,12 +319,6 @@ function App() {
     }, 5000);
   };
 
-  useEffect(() => {
-    if (account) {
-      loadUserData();
-    }
-  }, [account]);
-
   return (
     <div className="app">
       <div className="toast-container">
@@ -339,7 +391,7 @@ function App() {
               <button onClick={() => setAccount(null)} className="back-btn">
                 ← Back
               </button>
-              <span>Connected: {account.slice(0, 6)}...{account.slice(-4)}</span>
+              <span>Connected: {account.slice(0, 6)}...{account.slice(-4)} ({networkConfig.name})</span>
               <button onClick={getTestTokens} className="faucet-btn" disabled={isLoading}>
                 Get Test Tokens
               </button>
